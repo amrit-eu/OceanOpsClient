@@ -1,7 +1,7 @@
 API
 ==================
 
-Dummy
+OceanOpsClient
 -----------------------------
 
 .. automodule:: OceanOpsClient.OceanOpsClient

@@ -1,5 +1,5 @@
 import json
-from config import Settings
+from OceanOpsClient.config import Settings
 from urllib.request import urlopen
 
 PASSPORT_TEMPLATE = ("https://www.ocean-ops.org/passports/examples/"
