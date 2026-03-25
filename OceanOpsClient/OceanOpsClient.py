@@ -2,10 +2,6 @@ import json
 from urllib.request import urlopen, Request
 from OceanOpsClient.config import Settings
 
-PASSPORT_TEMPLATE = (
-    "https://www.ocean-ops.org/passports/examples/a-input-passport.json"
-)
-
 
 class OceanOps:
     BASE_URL = "https://www.ocean-ops.org/api/data"
@@ -21,10 +17,10 @@ class OceanOps:
         }
 
     @classmethod
-    def from_env(cls):
-        """
-        Load credentials from environment / .env / CLI via Settings
-        """
+    def from_env(cls, env_file: str | None = None):
+        if env_file is not None:
+            return cls(Settings(_env_file=env_file))
+        # fallback to model_config.env_file
         return cls(Settings())
 
     @classmethod
