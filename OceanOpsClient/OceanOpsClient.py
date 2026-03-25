@@ -1,23 +1,44 @@
 import json
 import requests
-from typing import Any
-from typing import Dict
-from typing import Union
-from typing import Optional
+from typing import Any, Dict, Union, Optional
 from pathlib import Path
 from jsonschema import validate
 from OceanOpsClient.config import Settings
 
 
 class OceanOps:
+    """
+    Client for interacting with the OceanOPS API.
+
+    Provides methods for read-only data retrieval and authenticated
+    data submission. Supports JSON schema validation of OceanOPS
+    "passport" files.
+
+    Attributes:
+        BASE_URL (str): Base URL for OceanOPS API endpoints.
+        DEFAULT_SCHEMA_URL (str): URL to the default passport JSON schema.
+        LOCAL_SCHEMA_PATH (Path): Local path to the JSON schema file.
+        settings (Optional[Settings]): Optional credentials/settings.
+        headers (Optional[Dict[str, str]]): HTTP headers for authenticated
+            requests. None if no credentials provided.
+    """
+
     BASE_URL = "https://www.ocean-ops.org/api/data"
-    DEFAULT_SCHEMA_URL = "https://www.ocean-ops.org/passports/examples/a-passport-input.schema.json"
+    DEFAULT_SCHEMA_URL = (
+        "https://www.ocean-ops.org/passports/examples/a-passport-input.schema.json"
+    )
     LOCAL_SCHEMA_PATH = Path(__file__).parent / "passport_schema" / "local_schema.json"
 
-    def __init__(self, settings: Optional["Settings"] = None):
+    def __init__(self, settings: Optional["Settings"] = None) -> None:
+        """
+        Initialize an OceanOps client.
+
+        Args:
+            settings (Optional[Settings]): Optional credentials/settings.
+                If None, client operates in read-only mode.
+        """
         self.settings = settings
 
-        # Build headers only if credentials exist
         if self.settings:
             self.headers = {
                 "Content-Type": "application/json",
@@ -28,7 +49,18 @@ class OceanOps:
             self.headers = None  # read-only mode
 
     @classmethod
-    def from_env(cls, env_file: str | None = None):
+    def from_env(cls, env_file: Optional[str] = None) -> "OceanOps":
+        """
+        Create an OceanOps client from environment variables or a .env file.
+
+        Args:
+            env_file (Optional[str]): Path to a .env file. If None, uses
+                default environment variables.
+
+        Returns:
+            OceanOps: Instance of OceanOps client. If credentials cannot
+                be loaded, returns a read-only client.
+        """
         try:
             settings = Settings(_env_file=env_file) if env_file else Settings()
             return cls(settings)
@@ -37,12 +69,34 @@ class OceanOps:
             return cls(None)
 
     @classmethod
-    def from_credentials(cls, key_id: str, token: str):
+    def from_credentials(cls, key_id: str, token: str) -> "OceanOps":
+        """
+        Create an OceanOps client from explicit credentials.
+
+        Args:
+            key_id (str): API key ID.
+            token (str): API key token.
+
+        Returns:
+            OceanOps: Instance of OceanOps client with credentials.
+        """
         settings = Settings(API_KEY_ID=key_id, API_KEY_TOKEN=token)
         return cls(settings)
 
-    # Example method for read-only access
     def get_platform(self, ptfWigosId: str) -> Dict[str, Any]:
+        """
+        Retrieve platform information from OceanOPS using a WIGOS ID.
+
+        Args:
+            ptfWigosId (str): Platform WIGOS ID.
+
+        Returns:
+            Dict[str, Any]: JSON response from the OceanOPS API.
+
+        Raises:
+            ValueError: If ptfWigosId is not provided.
+            requests.HTTPError: If the API request fails.
+        """
         if not ptfWigosId:
             raise ValueError("ptfWigosId must be provided")
 
@@ -51,42 +105,62 @@ class OceanOps:
         response.raise_for_status()
         return response.json()
 
-    # Example method for push
-    def push_data(self, payload: dict):
+    def push_data(self, payload: Dict[str, Any]) -> Dict[str, str]:
         """
-        Push data. Requires credentials.
+        Push data to OceanOPS. Requires authenticated client.
+
+        Args:
+            payload (Dict[str, Any]): Data to push to the API.
+
+        Returns:
+            Dict[str, str]: Status of the operation.
+
+        Raises:
+            RuntimeError: If client does not have credentials.
         """
         if not self.headers:
             raise RuntimeError("Cannot push data: credentials required")
-        # ... call API with self.headers
+        # TODO: Implement actual API call
         return {"status": "success"}
 
     def validate_passport_json(
-            self,
-            local_json: Union[str, dict],
-            use_local_schema: bool = False,
+        self,
+        local_json: Union[str, dict],
+        use_local_schema: bool = False,
     ) -> bool:
+        """
+        Validate a local OceanOPS passport JSON against a schema.
 
+        Args:
+            local_json (Union[str, dict]): Path to JSON file or dict object
+                to validate.
+            use_local_schema (bool, optional): If True, use the local
+                schema file. Defaults to False (uses online schema).
+
+        Returns:
+            bool: True if JSON is valid against the schema.
+
+        Raises:
+            FileNotFoundError: If local schema file does not exist.
+            ValueError: If local_json is not a file path or dictionary.
+            requests.HTTPError: If online schema cannot be fetched.
+            jsonschema.ValidationError: If JSON does not conform to schema.
+        """
         if use_local_schema:
             schema_path = self.LOCAL_SCHEMA_PATH
 
             if not schema_path.exists():
-                raise FileNotFoundError(
-                    f"Local schema not found: {schema_path}")
+                raise FileNotFoundError(f"Local schema not found: {schema_path}")
 
             print(f"Using LOCAL schema: {schema_path}")
-
             with open(schema_path, "r", encoding="utf-8") as f:
                 schema = json.load(f)
-
         else:
             print("Using ONLINE OceanOPS schema")
-
             resp = requests.get(self.DEFAULT_SCHEMA_URL)
             resp.raise_for_status()
             schema = resp.json()
 
-        # --- Load data ---
         if isinstance(local_json, (str, Path)):
             with open(local_json, "r", encoding="utf-8") as f:
                 data = json.load(f)
@@ -95,10 +169,7 @@ class OceanOps:
         else:
             raise ValueError("local_json must be a file path or a dictionary")
 
-        # --- Validate ---
         validate(instance=data, schema=schema)
 
         print("JSON is valid against the schema")
         return True
-
-
