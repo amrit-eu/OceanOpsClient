@@ -15,4 +15,8 @@ class TestOceanOps(unittest.TestCase):
         self.assertIsNotNone(client.settings.API_KEY_ID)
         self.assertIsNotNone(client.settings.API_KEY_TOKEN)
 
+    def test_init_without_settings(self):
+        client = OceanOps()
+        self.assertIsNone(client.headers)
+
 
