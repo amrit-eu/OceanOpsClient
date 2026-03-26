@@ -1,8 +1,12 @@
 import json
 import requests
-from typing import Any, Dict, Union, Optional
+from typing import Any
+from typing import Dict
+from typing import Union
+from typing import Optional
 from pathlib import Path
 from jsonschema import validate
+from jsonschema import ValidationError
 from OceanOpsClient.config import Settings
 
 
@@ -37,7 +41,7 @@ class OceanOpsClient:
         self.settings = settings
 
     @classmethod
-    def from_env(cls, env_file: Optional[str] = None) -> "OceanOps":
+    def from_env(cls, env_file: Optional[str] = None) -> "OceanOpsClient":
         """
         Create an OceanOps client from environment variables or a .env file.
 
@@ -54,7 +58,7 @@ class OceanOpsClient:
             return cls(None)
 
     @classmethod
-    def from_credentials(cls, key_id: str, token: str) -> "OceanOps":
+    def from_credentials(cls, key_id: str, token: str) -> "OceanOpsClient":
         """
         Create an OceanOps client from explicit credentials.
 
@@ -89,47 +93,54 @@ class OceanOpsClient:
 
     def validate_passport_json(
             self,
-            local_json: Union[str, dict],
+            local_json: Union[str, Path, dict],
             schema_source: Union[str, Path, None] = None,
-    ) -> bool:
+    ) -> Tuple[bool, Optional[str]]:
         """
         Validate a local OceanOPS passport JSON against a schema.
 
         :param local_json: Path to JSON file or dict object to validate.
-        :param schema_source: If provided, use this local schema file path or a URL.
-                              Defaults to online schema.
-        :return: True if JSON is valid against the schema.
+        :param schema_source: Path to local schema file or URL. Defaults to online schema if None.
+        :return: Tuple (True, None) if valid, otherwise (False, error message).
         """
         # --- Load schema ---
-        if schema_source is None:
-            # Default: online schema
-            print("Using ONLINE OceanOPS schema")
-            resp = requests.get(self.DEFAULT_SCHEMA_URL)
-            resp.raise_for_status()
-            schema = resp.json()
-        else:
-            # User-provided local schema
-            schema_path = Path(schema_source)
-            if not schema_path.exists():
-                raise FileNotFoundError(
-                    f"Schema file not found: {schema_path}")
-            print(f"Using USER-PROVIDED local schema: {schema_path}")
-            with open(schema_path, "r", encoding="utf-8") as f:
-                schema = json.load(f)
+        try:
+            if schema_source is None:
+                resp = requests.get(self.DEFAULT_SCHEMA_URL)
+                resp.raise_for_status()
+                schema = resp.json()
+            else:
+                schema_path = Path(schema_source)
+                if not schema_path.exists():
+                    return False, f"Schema file not found: {schema_path}"
 
-        # --- Load JSON to validate ---
-        if isinstance(local_json, (str, Path)):
-            with open(local_json, "r", encoding="utf-8") as f:
-                data = json.load(f)
-        elif isinstance(local_json, dict):
-            data = local_json
-        else:
-            raise ValueError("local_json must be a file path or a dictionary")
+                with open(schema_path, "r", encoding="utf-8") as f:
+                    schema = json.load(f)
+
+        except Exception as e:
+            return False, f"Error loading schema: {e}"
+
+        # --- Load JSON ---
+        try:
+            if isinstance(local_json, (str, Path)):
+                with open(local_json, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+            elif isinstance(local_json, dict):
+                data = local_json
+            else:
+                return False, "local_json must be a file path or a dictionary"
+
+        except Exception as e:
+            return False, f"Error loading JSON: {e}"
 
         # --- Validate ---
-        validate(instance=data, schema=schema)
-        print("JSON is valid against the schema")
-        return True
+        try:
+            validate(instance=data, schema=schema)
+            return True, None
+
+        except ValidationError as e:
+            path = " -> ".join(map(str, e.path)) if e.path else "root"
+            return False, f"{e.message} (at: {path})"
 
     def post_passport(
             self,
