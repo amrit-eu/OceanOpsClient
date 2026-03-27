@@ -1,0 +1,107 @@
+{
+  "meta": {
+    "schemaVersion": "1.0",
+    "sourceText": "Manual submission from operator logbook",
+    "ingestionMethodId": 4,
+    "contactId": 12345,
+    "observedAt": "2026-03-27T10:15:30Z"
+  },
+  "options": {
+    "mode": "UPSERT",
+    "dryRun": false,
+    "createIfMissing": {
+      "platform": true,
+      "sensorSetups": true
+    }
+  },
+  "platform": {
+    "match": {
+      "wigosId": "0-20000-0-12345"
+    },
+    "patch": {
+      "name": "North Sea Buoy Alpha",
+      "comments": "Updated deployment and sensor configuration",
+      "deployment": {
+        "date": "2026-03-20T08:00:00Z",
+        "latitude": 51.23,
+        "longitude": 2.93,
+        "method": {
+          "code": "MOORING"
+        },
+        "maxWaterDepth": 45.5,
+        "elevation": -5.0,
+        "ship": {
+          "imoNumber": "IMO1234567"
+        }
+      },
+      "retrieval": {
+        "startDate": "2026-09-01T00:00:00Z",
+        "endDate": "2026-09-10T00:00:00Z",
+        "latitude": 51.25,
+        "longitude": 2.95,
+        "ship": {
+          "ovhId": "OVH-98765"
+        },
+        "endingCause": {
+          "code": "MISSION_COMPLETE"
+        }
+      }
+    }
+  },
+  "sensorSetups": [
+    {
+      "match": {},
+      "data": {
+        "create": {
+          "variable": {
+            "code": "TEMP"
+          },
+          "sensorModel": {
+            "name": "Sea-Bird SBE37"
+          },
+          "placement": {},
+          "sensor": {},
+          "lifecycle": {},
+          "comments": "Temperature sensor mounted at 5m depth"
+        }
+      }
+    },
+    {
+      "match": {},
+      "data": {
+        "create": {
+          "variable": {
+            "id": 2001
+          },
+          "sensorModel": {
+            "code": "AANDERAA_OXYGEN"
+          },
+          "placement": {},
+          "sensor": {},
+          "lifecycle": {},
+          "comments": "Dissolved oxygen sensor"
+        }
+      }
+    }
+  ],
+  "contactContributions": [
+    {
+      "contactId": 12345,
+      "roles": ["OPERATOR", "DATA_MANAGER"]
+    },
+    {
+      "contactId": 67890,
+      "roles": ["PRINCIPAL_INVESTIGATOR"]
+    }
+  ],
+  "agencyContributions": [
+    {
+      "agencyId": 555,
+      "roles": ["OWNER"]
+    },
+    {
+      "agencyId": 777,
+      "roles": ["FUNDER"]
+    }
+  ]
+}

@@ -2,7 +2,7 @@
   "meta": {
     "schemaVersion": "1.0",
     "sourceText": "VLIZ test",
-    "ingestionMethodId": 0,
+    "ingestionMethodId": 4,
     "contactId": 0,
     "observedAt": "2026-03-12T14:30:00Z"
   },
