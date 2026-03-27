@@ -13,5 +13,6 @@ Contents
    :titlesonly:
 
    install
+   passport
    usage
    API

@@ -21,10 +21,9 @@ And initiate using:
 
 This will return:
 
-.. code-block:: python
+.. code-block::
 
-    API_KEY_ID='1382' API_KEY_TOKEN=SecretStr('**********')
-    Process finished with exit code 0
+    API_KEY_ID='1234' API_KEY_TOKEN=SecretStr('**********')
 
 Under no circumstances the client will display your secret token.
 

@@ -1,11 +1,11 @@
 import unittest
-from OceanOpsClient.OceanOpsClient import OceanOps
+from OceanOpsClient import OceanOpsClient
 
 
 class TestGetPlatform(unittest.TestCase):
     def setUp(self):
         # Initialize the client (read-only mode)
-        self.client = OceanOps()
+        self.client = OceanOpsClient()
         # Example WIGOS ID known to exist in the API
         self.wigosID = "0-22000-0-6204817"
 
